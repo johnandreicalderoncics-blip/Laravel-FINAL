@@ -22,7 +22,9 @@ class User extends Authenticatable
 
     // User role constants
     const ROLE_ADMIN = 'admin';
+
     const ROLE_EMPLOYEE = 'employee';
+
     const ROLE_CUSTOMER = 'customer';
 
     /**

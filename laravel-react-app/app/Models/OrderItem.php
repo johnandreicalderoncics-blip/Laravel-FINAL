@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OrderItem extends Model
 {
     protected $primaryKey = 'order_item_id';
-    
+
     protected $fillable = [
         'order_id',
         'product_id',
