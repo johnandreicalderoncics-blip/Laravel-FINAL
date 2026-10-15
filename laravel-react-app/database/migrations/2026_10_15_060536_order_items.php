@@ -13,15 +13,18 @@ return new class extends Migration
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->increments('order_item_id');
-            $table->integer('order_id');
-            $table->integer('product_id');
-            $table->integer('quantity');
+            $table->unsignedInteger('order_id');
+            $table->unsignedInteger('product_id');
+            $table->unsignedInteger('quantity');
             $table->decimal('item_price', 10, 2);
             $table->timestamps();
 
             // Foreign key constraints
-            $table->foreign('order_id')->references('order_id')->on('orders')->onDelete('cascade');
-            $table->foreign('product_id')->references('product_id')->on('products')->onDelete('cascade');
+            $table->foreign('order_id')->references('order_id')->on('orders')->cascadeOnDelete();
+            $table->foreign('product_id')->references('product_id')->on('products')->restrictOnDelete();
+
+            // One line per product per order; merge quantities instead of duplicating rows.
+            $table->unique(['order_id', 'product_id']);
         });
     }
 

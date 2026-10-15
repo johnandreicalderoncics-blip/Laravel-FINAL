@@ -31,4 +31,16 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class, 'order_id', 'order_id');
     }
+
+    /**
+     * Recompute total_price from the order's line items.
+     */
+    public function recalculateTotal(): void
+    {
+        $total = $this->orderItems()
+            ->selectRaw('COALESCE(SUM(quantity * item_price), 0) as total')
+            ->value('total');
+
+        $this->update(['total_price' => $total]);
+    }
 }

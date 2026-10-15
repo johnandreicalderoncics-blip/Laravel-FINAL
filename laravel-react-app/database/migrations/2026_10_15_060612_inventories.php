@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('inventories', function (Blueprint $table) {
             $table->increments('inventory_id');
-            $table->integer('product_id');
-            $table->integer('quantity_in_stock')->default(0);
+            $table->unsignedInteger('product_id')->unique();
+            $table->unsignedInteger('quantity_in_stock')->default(0);
             $table->timestamp('last_stock_update')->useCurrent();
             $table->timestamps();
 
-            $table->foreign('product_id')->references('product_id')->on('products')->onDelete('cascade');
+            $table->foreign('product_id')->references('product_id')->on('products')->cascadeOnDelete();
         });
     }
 

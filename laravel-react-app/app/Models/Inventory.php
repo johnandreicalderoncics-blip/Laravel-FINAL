@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class Inventory extends Model
 {
@@ -26,13 +27,20 @@ class Inventory extends Model
     }
 
     /**
-     * Update stock quantity and timestamp
+     * Update stock quantity and timestamp.
+     *
+     * Inventory is the source of truth; products.available_quantity is kept
+     * in sync inside the same transaction so the two never drift apart.
      */
     public function updateStock(int $quantity): void
     {
-        $this->update([
-            'quantity_in_stock' => $quantity,
-            'last_stock_update' => now(),
-        ]);
+        DB::transaction(function () use ($quantity) {
+            $this->update([
+                'quantity_in_stock' => $quantity,
+                'last_stock_update' => now(),
+            ]);
+
+            Product::whereKey($this->product_id)->update(['available_quantity' => $quantity]);
+        });
     }
 }

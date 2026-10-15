@@ -16,9 +16,10 @@ return new class extends Migration
             $table->string('product_name');
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
-            $table->integer('available_quantity')->default(0);
-            $table->string('category')->nullable();
+            $table->unsignedInteger('available_quantity')->default(0);
+            $table->string('category')->nullable()->index();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

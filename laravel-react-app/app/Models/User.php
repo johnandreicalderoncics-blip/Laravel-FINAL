@@ -8,15 +8,16 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'user_role', 'phone_number', 'address', 'is_active'])]
+#[Fillable(['name', 'username', 'email', 'password', 'user_role', 'phone_number', 'address', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $primaryKey = 'user_id';
 
@@ -45,6 +46,14 @@ class User extends Authenticatable
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Get the audit log entries created by the user.
+     */
+    public function logs(): HasMany
+    {
+        return $this->hasMany(Log::class, 'user_id', 'user_id');
     }
 
     /**
