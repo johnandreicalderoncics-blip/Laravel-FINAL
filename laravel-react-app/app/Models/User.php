@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\Rule;
 
-#[Fillable(['name', 'email', 'password', 'user_role', 'phone_number', 'address', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'phone_number', 'address'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -27,6 +28,15 @@ class User extends Authenticatable
 
     const ROLE_CUSTOMER = 'customer';
 
+    const ROLES = [self::ROLE_ADMIN, self::ROLE_EMPLOYEE, self::ROLE_CUSTOMER];
+
+    // User status constants
+    const STATUS_ACTIVE = 'active';
+
+    const STATUS_INACTIVE = 'inactive';
+
+    const STATUSES = [self::STATUS_ACTIVE, self::STATUS_INACTIVE];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -37,7 +47,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_active' => 'boolean',
         ];
     }
 
@@ -50,11 +59,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the products in the user's cart.
+     */
+    public function cartItems(): HasMany
+    {
+        return $this->hasMany(CartItem::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Get the activity log entries for the user.
+     */
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'user_id', 'user_id');
+    }
+
+    /**
      * Check if user is admin
      */
     public function isAdmin(): bool
     {
-        return $this->user_role === self::ROLE_ADMIN;
+        return $this->role === self::ROLE_ADMIN;
     }
 
     /**
@@ -62,7 +87,7 @@ class User extends Authenticatable
      */
     public function isEmployee(): bool
     {
-        return $this->user_role === self::ROLE_EMPLOYEE;
+        return $this->role === self::ROLE_EMPLOYEE;
     }
 
     /**
@@ -70,7 +95,15 @@ class User extends Authenticatable
      */
     public function isCustomer(): bool
     {
-        return $this->user_role === self::ROLE_CUSTOMER;
+        return $this->role === self::ROLE_CUSTOMER;
+    }
+
+    /**
+     * Check if the account is allowed to log in
+     */
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
     }
 
     /**
@@ -78,7 +111,7 @@ class User extends Authenticatable
      */
     public function canManageProducts(): bool
     {
-        return in_array($this->user_role, [self::ROLE_ADMIN, self::ROLE_EMPLOYEE]);
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_EMPLOYEE]);
     }
 
     /**
@@ -86,6 +119,32 @@ class User extends Authenticatable
      */
     public function canViewAllTables(): bool
     {
-        return $this->user_role === self::ROLE_ADMIN;
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Validation rules for registration and for the admin user form. Pass
+     * the user's id when updating so their own email is not seen as taken.
+     * Only include role and status from an admin-only form.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function rules(?int $ignoreUserId = null): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($ignoreUserId, 'user_id'),
+            ],
+            'password' => [$ignoreUserId === null ? 'required' : 'nullable', 'string', 'min:8'],
+            'role' => ['sometimes', Rule::in(self::ROLES)],
+            'status' => ['sometimes', Rule::in(self::STATUSES)],
+            'phone_number' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:1000'],
+        ];
     }
 }
